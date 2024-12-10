@@ -21,15 +21,21 @@ def get_dataset(split, take_label):
 
     elif split == "FGSM":
         img_folder = r"Image\Brain_Tumor\AT_FGSM"
+        
+    elif split == "DDN":
+        img_folder = r"Image\Brain_Tumor\AT_DDN"
     
+    elif split == "PGD":
+        img_folder = r"Image\Brain_Tumor\AT_PGD"
+        
     elif split == "flips":
         img_folder = r"Image\Brain_Tumor\Flips"
             
-    elif split == "subsmapling":
-        img_folder = r"Image\Brain_Tumor\Subsmapling"
+    elif split == "subsampling":
+        img_folder = r"Image\Brain_Tumor\Subsampling"
         
     elif split == "gaussian_blur":
-        img_folder = r"Image\Brain_Tumor\GaussianBlur"
+        img_folder = r"Image\Brain_Tumor\Gaussian_blur"
     
 
     dataset = BrainTumorDataset(img_folder, take_label, testing)
@@ -73,8 +79,8 @@ class BrainTumorDataset(Dataset):
         if self.transform:
             img = self.transform(img)
   
-        label_ts = self.labels[idx]
         if self.take_label == True:
+            label_ts = self.labels[idx]
             return img, img_name, label_ts
         else:
             return img, img_name
