@@ -38,7 +38,6 @@ Adversarial examples are inputs to a machine learning model that are designed to
 + `--adversarial_percentage`: adversarial percentage of full dataset(0.0 - 1.0)
 + `--test_size`: Size of Y dataset
 + `--n_interations`: Number of bootstrap iterations
-+ `--test`: Số thử nghiệm
 
 ## Requirements
 

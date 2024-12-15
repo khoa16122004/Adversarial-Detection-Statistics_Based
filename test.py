@@ -78,7 +78,7 @@ def main(args):
 
         # break
     
-    print(f"Accuracy with {args.test_size}", acc / 10)    
+    print(f"Accuracy with {args.test_size}", acc / 9)    
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
