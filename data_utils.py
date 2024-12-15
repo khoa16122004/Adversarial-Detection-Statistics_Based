@@ -4,8 +4,24 @@ import os
 from torchvision import transforms, datasets
 from torch.utils.data import Dataset
 from torchvision.utils import save_image
+import random
 
 
+def mix_datasets(datasets, proportions):
+    if len(datasets) != len(proportions):
+        raise ValueError("Số dataset và tỷ lệ phải trùng nhau.")
+    if not abs(sum(proportions) - 1.0) < 1e-6:
+        raise ValueError("Tổng các tỷ lệ phải bằng 1.")
+
+    total_size = min(len(dataset) for dataset in datasets)
+    mixed_dataset = []
+
+    for dataset, proportion in zip(datasets, proportions):
+        sample_size = int(total_size * proportion)
+        mixed_dataset.extend(random.sample(dataset, sample_size))
+
+    random.shuffle(mixed_dataset)
+    return mixed_dataset
 
 
 def get_model():

@@ -2,12 +2,88 @@ import argparse
 import torch
 import numpy as np
 import random
-from scipy.stats import entropy
-from sklearn.neighbors import KernelDensity
 from data_utils import get_model, get_dataset
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
+from torch import nn
+from tqdm import tqdm
 
-def sampling_dataset(dataset_1, dataset_2, sampling_percentage=0.9):
+def gaussian_kernel(x, y, sigma=1.0):
+    
+    # ex(- ||x - y||^2 / (2sigma^2))
+    
+    x_norm = x.pow(2).sum(1).view(-1, 1)
+    y_norm = y.pow(2).sum(1).view(-1, 1)
+    dist = x_norm + y_norm.t() - 2.0 * torch.mm(x, y.t()) 
+    return torch.exp(-dist / (2 * sigma * sigma))
+
+def compute_mmd(x, y, kernel_function=gaussian_kernel):
+    n = x.size(0)
+    m = y.size(0)
+    
+    if not isinstance(x, torch.Tensor):
+        x = torch.FloatTensor(x)
+    if not isinstance(y, torch.Tensor):
+        y = torch.FloatTensor(y)
+    
+    if torch.cuda.is_available():
+        x = x.cuda()
+        y = y.cuda()
+    
+    k_xx = kernel_function(x, x)
+    k_yy = kernel_function(y, y)
+    k_xy = kernel_function(x, y)
+    
+    mmd = (k_xx.sum() / (n * n) + 
+           k_yy.sum() / (m * m) - 
+           2 * k_xy.sum() / (n * m))
+    
+    return mmd.item()
+
+def bootstrap_mmd_test(x, y, n_iterations=10000, test=1, alpha=0.05):
+    
+    """
+    - if two dataser has the same distribution, the diff > original is random things. If pvalue < alpha, the random is small and this dont have statitical meaning -> reject H0. In contrast if p_value > alpha, the random is high and this have significant statical meaning -> accept H0. \
+    - Hypothesis test:    
+    H0: distributions are identical
+    H1: distributions are different
+    
+    Returns:
+    - MMD value
+    - p-value
+    - boolean indicating if H0 should be rejected
+    """
+    n = len(x)
+    m = len(y)
+    combined = np.vstack([x, y])
+    
+    original_mmd = compute_mmd(torch.FloatTensor(x), torch.FloatTensor(y))
+    if test == 0:
+        return original_mmd, 0, 0
+    
+    bootstrap_mmds = []
+    for _ in tqdm(range(n_iterations), desc="Bootstrapping"):
+        perm = np.random.permutation(n + m)
+        bootstrap_x = combined[perm[:n]]
+        bootstrap_y = combined[perm[n:]]
+        
+        bootstrap_mmd = compute_mmd(torch.FloatTensor(bootstrap_x), 
+                                  torch.FloatTensor(bootstrap_y))
+        bootstrap_mmds.append(bootstrap_mmd)
+    
+    p_value = np.mean(np.array(bootstrap_mmds) >= original_mmd)
+    
+    # error means: resampling > observed
+    
+    if p_value > alpha: # more than alpha percent likelihood that this error is random
+        reject_h0 = False
+    else:
+        reject_h0 = True # p_value percent likelihood the error is random, 1 - pvalue two distribution are different
+    
+    # reject_h0 = p_value < alpha
+    
+    return original_mmd, p_value, reject_h0
+
+def sampling_dataset(dataset_1, dataset_2, sampling_percentage=0.5):
     sample_size_1 = int(len(dataset_1) * (1 - sampling_percentage))
     sample_size_2 = int(len(dataset_2) * sampling_percentage)
     
@@ -15,96 +91,77 @@ def sampling_dataset(dataset_1, dataset_2, sampling_percentage=0.9):
     sampled_dataset_2 = random.sample(dataset_2, sample_size_2)
     
     new_dataset = sampled_dataset_1 + sampled_dataset_2
-    
+     
     return new_dataset    
 
-def compute_kl_divergence_images(dataset_1, dataset_2, bins=256):
-    pixels_1 = torch.cat([img.view(-1) for img in dataset_1])
-    pixels_2 = torch.cat([img.view(-1) for img in dataset_2])
-        
-    hist_1, _ = np.histogram(pixels_1.numpy(), bins=bins, range=(0, 1), density=True)
-    hist_2, _ = np.histogram(pixels_2.numpy(), bins=bins, range=(0, 1), density=True)    
+def extract_features_with_sigmoid(model, imgs):
+    feature_extractor = torch.nn.Sequential(*list(model.children())[:-1])
+    sigmoid = nn.Sigmoid()
     
-    hist_1 += 1e-8
-    hist_2 += 1e-8
+    features = []
+    for img in imgs:
+        with torch.no_grad():
+            feat = feature_extractor(img.unsqueeze(0).cuda())
+            feat_sigmoid = sigmoid(feat).cpu().view(-1).numpy()
+            features.append(feat_sigmoid)
     
-    kl_div_1_to_2 = entropy(hist_1, hist_2)
-    kl_div_2_to_1 = entropy(hist_2, hist_1)
-    
-    return kl_div_1_to_2, kl_div_2_to_1
+    return np.array(features)
 
-def compute_kl_divergence_features(dataset_1, dataset_2, feature_extractor, bandwidth=0.01):
-    # Extract features
-    features_1 = [feature_extractor(img.unsqueeze(0).cuda()).cpu().view(-1).detach().numpy() for img in dataset_1]
-    features_2 = [feature_extractor(img.unsqueeze(0).cuda()).cpu().view(-1).detach().numpy() for img in dataset_2]
+def test_distribution_difference(x, y, method="feautures", model=None, n_iterations=10000, test=0):
+    if method == "images":
+        x_flat = torch.stack([img.view(-1) for img in x]).cpu().numpy()
+        y_flat = torch.stack([img.view(-1) for img in y]).cpu().numpy()
+        
+        mmd, p_value, reject = bootstrap_mmd_test(x_flat, y_flat)
+        
+    elif method == "features":
+        features_x = extract_features_with_sigmoid(model, x)
+        features_y = extract_features_with_sigmoid(model, y)
+        
+        # scaler = MinMaxScaler()
+        # features_x_scaled = scaler.fit_transform(features_x)
+        # features_y_scaled = scaler.transform(features_y)
+        
+        mmd, p_value, reject = bootstrap_mmd_test(features_x, features_y, n_iterations, test)
     
-    features_1 = np.vstack(features_1)
-    features_2 = np.vstack(features_2)
-    
-    # Normalize the features
-    scaler = StandardScaler()
-    features_1 = scaler.fit_transform(features_1)
-    features_2 = scaler.fit_transform(features_2)
-    
-    # Kernel Density Estimation for feature distributions
-    kde_1 = KernelDensity(bandwidth=bandwidth, kernel='gaussian')
-    kde_2 = KernelDensity(bandwidth=bandwidth, kernel='gaussian')
-    
-    kde_1.fit(features_1)
-    kde_2.fit(features_2)
-    
-    # Sample points for KL divergence estimation
-    sample_size = min(len(features_1), len(features_2), 1000)
-    samples_1 = features_1[:sample_size]
-    samples_2 = features_2[:sample_size]
-    
-    # Compute log probabilities
-    log_prob_1_in_1 = kde_1.score_samples(samples_1)
-    log_prob_1_in_2 = kde_2.score_samples(samples_1)
-    
-    log_prob_2_in_2 = kde_2.score_samples(samples_2)
-    log_prob_2_in_1 = kde_1.score_samples(samples_2)
-    
-    # Compute KL divergence
-    kl_div_1_to_2 = np.mean(log_prob_1_in_1 - log_prob_1_in_2)
-    kl_div_2_to_1 = np.mean(log_prob_2_in_2 - log_prob_2_in_1)
-    
-    return kl_div_1_to_2, kl_div_2_to_1
+    return mmd, p_value, reject
 
 def main(args):
-    testing_dataset = get_dataset(split="test", take_label=False)  # return img, img_name, label_ts
+    testing_dataset = get_dataset(split="test", take_label=False)
     
     for method in ['FGSM', "DDN", "PGD", "flips", "subsampling", "gaussian_blur"]:
         try:
-            print(f"Method: {method}")
-            transform_dataset = get_dataset(split=method, take_label=False)  # img, img_name
+            print(f"\nMethod: {method}")
+            transform_dataset = get_dataset(split=method, take_label=False)
 
             testing_imgs = [item[0] for item in testing_dataset]  
             transform_imgs = [item[0] for item in transform_dataset]
-
-            if args.method == "images":
-                kl_div_1_to_2, kl_div_2_to_1 = compute_kl_divergence_images(testing_imgs, transform_imgs)
-                print(f"KL Divergence from testing to new sampling (images): {kl_div_1_to_2}")
-                print(f"KL Divergence from new sampling to testing (images): {kl_div_2_to_1}")
+            new_sample_dataset = sampling_dataset(testing_imgs, transform_imgs)
             
-            elif args.method == "features":
-                model = get_model()
-                feature_extractor = torch.nn.Sequential(*list(model.children())[:-1])
-                kl_div_1_to_2, kl_div_2_to_1 = compute_kl_divergence_features(testing_imgs, transform_imgs, feature_extractor)
-                print(f"KL Divergence from testing to new sampling (features): {kl_div_1_to_2}")
-                print(f"KL Divergence from new sampling to testing (features): {kl_div_2_to_1}")
-    
+            model = get_model() if args.method == "features" else None
+            
+            mmd, p_value, reject = test_distribution_difference(
+                testing_imgs, 
+                new_sample_dataset, 
+                method=args.method,
+                model=model
+            )
+            
+            print(f"MMD value: {mmd:.6f}")
+            print(f"p-value: {p_value:.6f}")
+            print(f"Reject H0 (distributions are different): {reject}")
+                
         except Exception as e:
             print(f"Error with method {method}: {e}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Compute KL Divergence between datasets based on image or feature distribution.")
+    parser = argparse.ArgumentParser(description="Test distribution differences using MMD.")
     
     parser.add_argument(
         '--method',
         choices=['images', 'features'],
         default='images',
-        help="Select the method for computing KL Divergence ('images' or 'features'). Default is 'images'."
+        help="Select the method for computing MMD ('images' or 'features'). Default is 'images'."
     )
     
     args = parser.parse_args()

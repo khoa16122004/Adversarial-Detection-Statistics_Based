@@ -1,0 +1,3 @@
+MMD value: 0.028894
+p-value: 0.000000
+Reject H0 (distributions are different): True
