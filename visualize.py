@@ -3,16 +3,16 @@ import matplotlib.pyplot as plt
 # Data with detected information (True/False for color mapping)
 data = [
     (0, 0, True),
-    (0.1, 0.001755, False),
-    (0.15, 0.001845, False),
-    (0.2, 0.007879, True),
-    (0.3, 0.014985, True),
-    (0.4, 0.025981, True),
-    (0.5, 0.042536, True),
-    (0.6, 0.056021, True),
-    (0.7, 0.079855, True),
-    (0.8, 0.102911, True),
-    (0.9, 0.131998, True),
+    (0.1, 0.00140, False),
+    (0.15, 0.00289, True),
+    (0.2, 0.00487, True),
+    (0.3, 0.011771, True),
+    (0.4, 0.01941, True),
+    (0.5, 0.02889, True),
+    (0.6, 0.04493, True),
+    (0.7, 0.06113, True),
+    (0.8, 0.07728, True),
+    (0.9, 0.09669, True),
 ]
 
 # Unzip the data into separate lists for x (adversarial ratio), y (MMD value), and detected (True/False)

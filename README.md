@@ -1,7 +1,17 @@
-# Adversarial Example Detection using Maximum Mean Discrepancy (MMD)
+# Adversarial Example Detection using Maximum Mean Discrepancy (MMD) and Bootstrap Hypothesis Test.
+
+The adversarial dataset and the classification model was created by another our project in this link: [Adversarial Robustness of Medical Image Classifiers via Denoised Smoothing](https://github.com/khoa16122004/Adversarial-Robustness-of-Medical-Image-Classifiers-via-Denoised-Smoothing)
 
 ## Overview
-This project aims to detect adversarial examples in datasets using the Maximum Mean Discrepancy (MMD) test. Adversarial examples are inputs to a machine learning model that are designed to cause the model to misbehave. The MMD test is a statistical test that measures the difference between two distributions.
+This project aims to detect adversarial examples in datasets using the Maximum Mean Discrepancy (MMD) and Bootstrap Hypothesis test. 
+
+Adversarial examples are inputs to a machine learning model that are designed to cause the model to misbehave. The MMD test is a statistical test that measures the difference between two distributions.
+
+![alt text](img/algorithm.png)
+
+## Results
+![alt text](img/FGSM_result.png)
+![alt text](img/PGD_result.png)
 
 ## Code Structure
 
@@ -24,10 +34,10 @@ This project aims to detect adversarial examples in datasets using the Maximum M
     python test.py --adversarial_attack <attack_type> --adversarial_percentage <percentage> --test_size <size> --n_interations <iterations> --test <test_number>
     ```
 
-+ `--adversarial_attack`: Loại tấn công (FGSM, PGD, flips, subsampling, gaussian_blur)
-+ `--adversarial_percentage`: Tỷ lệ mẫu dữ liệu tấn công (0.0 - 1.0)
-+ `--test_size`: Kích thước mẫu dữ liệu thử nghiệm
-+ `--n_interations`: Số lần lặp lại thử nghiệm
++ `--adversarial_attack`: type of transforms (FGSM, PGD, flips, subsampling, gaussian_blur)
++ `--adversarial_percentage`: adversarial percentage of full dataset(0.0 - 1.0)
++ `--test_size`: Size of Y dataset
++ `--n_interations`: Number of bootstrap iterations
 + `--test`: Số thử nghiệm
 
 ## Requirements
