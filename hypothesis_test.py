@@ -124,7 +124,7 @@ def test_distribution_difference(x, y, method="feautures", model=None, n_iterati
         
         mmd, p_value, reject = bootstrap_mmd_test(features_x, features_y, n_iterations, test)
     
-    return mmd, p_value, reject
+    return mmd, p_value, reject, features_x, features_y
 
 def main(args):
     testing_dataset = get_dataset(split="test", take_label=False)
