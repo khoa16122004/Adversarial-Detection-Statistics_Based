@@ -56,19 +56,21 @@ def main(args):
     
 
     acc = 0
-    for adversarial_percentage in range(10):
-        new_imgs = create_dataset(testing_imgs, adversarial_imgs, 
-                                  adversarial_percentage * 0.1, args.test_size)
-        mmd, p_value, reject = test_distribution_difference(testing_imgs, 
-                                                            new_imgs,
-                                                            "features", 
-                                                            model,
-                                                            args.n_interations,
-                                                            args.test)
+    new_imgs = create_dataset(testing_imgs, adversarial_imgs, 
+                                args.adversarial_percentage * 0.1, args.test_size)
+    mmd, p_value, reject, _, _ = test_distribution_difference(testing_imgs, 
+                                                        new_imgs,
+                                                        "features", 
+                                                        model,
+                                                        args.n_interations,
+                                                        args.test)
 
+    print(mmd)
+    print(reject)
+    print(p_value)
         
-        if reject == True:
-            acc += 1
+        # if reject == True:
+        #     acc += 1
             
         # output_path = f"experiment/{args.test}_{args.n_interations}_{args.adversarial_attack}_{args.test_size}_{adversarial_percentage * 0.1}.txt"
         # with open(output_path, "w+") as f:
@@ -78,42 +80,42 @@ def main(args):
 
         # break
     
-    print(f"Accuracy with {args.test_size}", acc / 9)    
+    # print(f"Accuracy with {args.test_size}", acc / 9)    
     
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser()
     
-    parser.add_argument(
-        '--adversarial_attack',
-        choices=['FGSM', "PGD", "flips", "subsampling", "gaussian_blur"],
-        default='FGSM',
-        type=str,
-    )
+#     parser.add_argument(
+#         '--adversarial_attack',
+#         choices=['FGSM', "PGD", "flips", "subsampling", "gaussian_blur"],
+#         default='FGSM',
+#         type=str,
+#     )
     
-    parser.add_argument(
-        '--adversarial_percentage',
-        default=0.5,
-        type=float,
-    )
+#     parser.add_argument(
+#         '--adversarial_percentage',
+#         default=0.5,
+#         type=float,
+#     )
     
-    parser.add_argument(
-        "--test_size",
-        default=1300,
-        type=int,
-    )
+#     parser.add_argument(
+#         "--test_size",
+#         default=1300,
+#         type=int,
+#     )
     
-    parser.add_argument(
-        "--n_interations",
-        default=10000,
-        type=int,
-    )
+#     parser.add_argument(
+#         "--n_interations",
+#         default=100,
+#         type=int,
+#     )
     
-    parser.add_argument(
-        "--test",
-        default=1,
-        type=int
-    )
+#     parser.add_argument(
+#         "--test",
+#         default=1,
+#         type=int
+#     )
     
     
-    args = parser.parse_args()
-    main(args)
+#     args = parser.parse_args()
+#     main(args)

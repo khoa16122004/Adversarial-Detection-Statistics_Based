@@ -9,7 +9,7 @@ from hypothesis_test import test_distribution_difference
 from test import create_dataset
 
 def main():
-    st.title("Distribution Comparison App")
+    # st.title("Distribution Comparison App")
 
     # Sidebar for inputs
     st.sidebar.header("Hypothesis Test Configuration")
@@ -24,7 +24,7 @@ def main():
         min_value=0.0, 
         max_value=1.0, 
         value=0.5, 
-        step=0.1
+        step=0.05
     )
     
     # Test configuration
@@ -35,12 +35,7 @@ def main():
         value=1300
     )
     
-    n_iterations = st.sidebar.number_input(
-        "Number of Bootstrap Iterations", 
-        min_value=100, 
-        max_value=50000, 
-        value=10000
-    )
+
     
     test_type = st.sidebar.selectbox(
         "Test Type", 
@@ -48,13 +43,7 @@ def main():
         format_func=lambda x: "Bootstrap Test" if x == 1 else "No Test"
     )
     
-    alpha = st.sidebar.slider(
-        "Significance Level (α)", 
-        min_value=0.01, 
-        max_value=0.1, 
-        value=0.05, 
-        step=0.01
-    )
+
     model = get_model()
 
     # Button to run analysis
@@ -78,7 +67,7 @@ def main():
                                                             new_imgs,
                                                             "features", 
                                                             model,
-                                                            n_iterations,
+                                                            1000,
                                                             True)
         
         # Display results

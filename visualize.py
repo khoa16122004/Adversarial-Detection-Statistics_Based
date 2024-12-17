@@ -38,10 +38,10 @@ import matplotlib.pyplot as plt
 # plt.show()
 
 samples_pgd = [1300, 1000, 800, 500, 200, 100] 
-correct_pgd = [9, 9, 8, 7, 5, 2] 
+correct_pgd = [9, 9, 8, 7, 6, 5] 
 
 samples_fgsm = [1300, 1000, 800, 500, 200, 100]  
-correct_fgsm = [8, 8, 8, 7, 4, 2]  
+correct_fgsm = [8, 8, 8, 7, 5, 5]  
 
 plt.figure(figsize=(8, 5))
 

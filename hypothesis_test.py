@@ -126,43 +126,43 @@ def test_distribution_difference(x, y, method="feautures", model=None, n_iterati
     
     return mmd, p_value, reject, features_x, features_y
 
-def main(args):
-    testing_dataset = get_dataset(split="test", take_label=False)
+# def main(args):
+#     testing_dataset = get_dataset(split="test", take_label=False)
     
-    for method in ['FGSM', "DDN", "PGD", "flips", "subsampling", "gaussian_blur"]:
-        try:
-            print(f"\nMethod: {method}")
-            transform_dataset = get_dataset(split=method, take_label=False)
+#     for method in ['FGSM', "DDN", "PGD", "flips", "subsampling", "gaussian_blur"]:
+#         try:
+#             print(f"\nMethod: {method}")
+#             transform_dataset = get_dataset(split=method, take_label=False)
 
-            testing_imgs = [item[0] for item in testing_dataset]  
-            transform_imgs = [item[0] for item in transform_dataset]
-            new_sample_dataset = sampling_dataset(testing_imgs, transform_imgs)
+#             testing_imgs = [item[0] for item in testing_dataset]  
+#             transform_imgs = [item[0] for item in transform_dataset]
+#             new_sample_dataset = sampling_dataset(testing_imgs, transform_imgs)
             
-            model = get_model() if args.method == "features" else None
+#             model = get_model() if args.method == "features" else None
             
-            mmd, p_value, reject = test_distribution_difference(
-                testing_imgs, 
-                new_sample_dataset, 
-                method=args.method,
-                model=model
-            )
+#             mmd, p_value, reject = test_distribution_difference(
+#                 testing_imgs, 
+#                 new_sample_dataset, 
+#                 method=args.method,
+#                 model=model
+#             )
             
-            print(f"MMD value: {mmd:.6f}")
-            print(f"p-value: {p_value:.6f}")
-            print(f"Reject H0 (distributions are different): {reject}")
+#             print(f"MMD value: {mmd:.6f}")
+#             print(f"p-value: {p_value:.6f}")
+#             print(f"Reject H0 (distributions are different): {reject}")
                 
-        except Exception as e:
-            print(f"Error with method {method}: {e}")
+#         except Exception as e:
+#             print(f"Error with method {method}: {e}")
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Test distribution differences using MMD.")
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(description="Test distribution differences using MMD.")
     
-    parser.add_argument(
-        '--method',
-        choices=['images', 'features'],
-        default='images',
-        help="Select the method for computing MMD ('images' or 'features'). Default is 'images'."
-    )
+#     parser.add_argument(
+#         '--method',
+#         choices=['images', 'features'],
+#         default='images',
+#         help="Select the method for computing MMD ('images' or 'features'). Default is 'images'."
+#     )
     
-    args = parser.parse_args()
-    main(args)
+#     args = parser.parse_args()
+#     main(args)
